@@ -4,11 +4,51 @@ Tabla: listProdigies
 ID, Name, Merits
 
 Tabla: allAvailablePilots
-ID, Name, Nat, OA, CON, TAL, EXP, AGG, TEI, STA, CHA, MOT, REP, AGE,WEI,RET, SAL, FEE,FAV, OFF
+ID, NAME, NAT, OA, CON, TAL, EXP, AGG, TEI, STA, CHA, MOT, REP, AGE,WEI,RET, SAL, FEE,FAV, OFF
 
 
 Tabla: availableProdigies
+ID, NAME, NAT, OA, CON, TAL, EXP, AGG, TEI, STA, CHA, MOT, REP, AGE,WEI,RET, SAL, FEE,FAV, OFF, Merits
+
+la tabal available Prodigies se va a llenar siempre según el siguiente código:
+
+TRUNCATE TABLE availableProdigies;
+INSERT INTO availableProdigies (
+    ID, NAME, NAT, OA, CON, TAL, EXP, AGG, TEI, STA, CHA, MOT, REP, AGE, WEI, RET, SAL, FEE, FAV, OFF, Merits
+)
+SELECT 
+    ap.ID, 
+    ap.NAME, 
+    ap.NAT, 
+    ap.OA, 
+    ap.CON, 
+    ap.TAL, 
+    ap.EXP, 
+    ap.AGG, 
+    ap.TEI, 
+    ap.STA, 
+    ap.CHA, 
+    ap.MOT, 
+    ap.REP, 
+    ap.AGE, 
+    ap.WEI, 
+    ap.RET, 
+    ap.SAL, 
+    ap.FEE, 
+    ap.FAV, 
+    ap.OFF, 
+    lp.Merits
+FROM 
+    listProdigies lp
+JOIN 
+    allAvailablePilots ap
+ON 
+    lp.ID = ap.ID;
+
+
+
 
 Tabla: Circuits
+ID_Track, Track_Name, Country, Kms, Laps, Lap_Distance, P, H, A
 
 Tabla: Updates
