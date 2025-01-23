@@ -1,0 +1,14 @@
+Base de Datos:
+
+Tabla: listProdigies
+ID, Name, Merits
+
+Tabla: allAvailablePilots
+ID, Name, Nat, OA, CON, TAL, EXP, AGG, TEI, STA, CHA, MOT, REP, AGE,WEI,RET, SAL, FEE,FAV, OFF
+
+
+Tabla: availableProdigies
+
+Tabla: Circuits
+
+Tabla: Updates
