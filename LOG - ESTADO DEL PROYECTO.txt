@@ -1,5 +1,11 @@
 Estado del proyecto:
-He subido los archivos a la web
-He encontrado que el problema radica en el problemático CSV
+Funciona perfectamente el algoritmo de subir todos los registros a allAvailablePilots
 
-el próximo intento será cambiar el index.html y el php para que trabajen con json
+creo que el próximo paso es encapsular correctamente el JS
+
+actualizar la tabla availableProdigies
+
+colocar correctamente los Updates
+
+Finalmente, comenzar a trabajar con la vista principal.
+

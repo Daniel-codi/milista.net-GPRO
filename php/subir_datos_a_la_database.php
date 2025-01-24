@@ -1,5 +1,5 @@
 <?php
-// Código PHP para subir los datos del archivo .CSV descargado, a la Base de datos u469674049_p2 en la tabla allAvailablePilots
+// Código PHP para subir los datos del archivo JSON descargado, a la Base de datos u469674049_p2 en la tabla allAvailablePilots
 
 // Mostrar errores para depuración
 ini_set('display_errors', 1);
@@ -22,7 +22,39 @@ if ($conn->connect_error) {
 }
 error_log("Conexión exitosa a la base de datos.");
 
-// Limpiar la tabla existente
+// Verificar si el contenido JSON fue enviado
+$jsonData = file_get_contents("php://input");
+if (!$jsonData) {
+    error_log("No se recibió contenido JSON válido.");
+    die("No se recibió contenido JSON válido.");
+}
+
+$data = json_decode($jsonData, true);
+if ($data === null) {
+    error_log("Error al decodificar el JSON.");
+    die("Error al decodificar el JSON.");
+}
+
+error_log("JSON recibido y decodificado correctamente.");
+
+// Actualizar la tabla Updates con el campo Last updated
+if (isset($data['Last updated'])) {
+    $lastUpdated = $data['Last updated'];
+    $sql_update = "UPDATE Updates SET LastUpdated = ? WHERE ID = 1";
+    $stmt_update = $conn->prepare($sql_update);
+    if ($stmt_update) {
+        $stmt_update->bind_param("s", $lastUpdated);
+        if ($stmt_update->execute()) {
+            error_log("Campo LastUpdated actualizado correctamente.");
+        } else {
+            error_log("Error al actualizar LastUpdated: " . $stmt_update->error);
+        }
+    } else {
+        error_log("Error al preparar la consulta para actualizar LastUpdated: " . $conn->error);
+    }
+}
+
+// Limpiar la tabla allAvailablePilots
 $sql_truncate = "TRUNCATE TABLE allAvailablePilots";
 if (!$conn->query($sql_truncate)) {
     error_log("Error al vaciar la tabla: " . $conn->error);
@@ -30,97 +62,92 @@ if (!$conn->query($sql_truncate)) {
 }
 error_log("Tabla allAvailablePilots vaciada correctamente.");
 
-// Verificar si el archivo CSV fue enviado
-if (isset($_FILES['csv_file']) && $_FILES['csv_file']['error'] === UPLOAD_ERR_OK) {
-    error_log("Archivo CSV recibido correctamente.");
-    $fileTmpPath = $_FILES['csv_file']['tmp_name'];
-    $csvData = file_get_contents($fileTmpPath);
-
-    if (!$csvData) {
-        error_log("El archivo CSV está vacío o no se pudo leer correctamente.");
-        die("El archivo CSV está vacío o no se pudo leer correctamente.");
-    }
-
-    $lines = explode("\n", $csvData);
-    error_log("Número total de líneas en el archivo: " . count($lines));
-
-    // Procesar el encabezado y las filas
-    $headers = str_getcsv(array_shift($lines), ";"); // Leer encabezados
-    error_log("Encabezados procesados: " . implode(", ", $headers));
-
-    $successCount = 0;
-    $errorCount = 0;
-
-    foreach ($lines as $line) {
-        if (trim($line) === '') continue; // Saltar líneas vacías
-
-        $row = str_getcsv($line, ";");
-        if (count($row) !== count($headers)) {
-            error_log("Fila ignorada por integridad: " . implode(", ", $row));
-            $errorCount++;
-            continue; // Validar integridad de la fila
-        }
-
-        // Validar columnas críticas
-        if (empty($row[1])) { // NAME no puede ser NULL o vacío
-            error_log("Fila ignorada porque NAME está vacío: " . implode(", ", $row));
-            $errorCount++;
-            continue;
-        }
-
-        // Mapear columnas a las de la tabla
-        $sql = "INSERT INTO allAvailablePilots (ID, NAME, NAT, OA, CON, TAL, EXP, AGG, TEI, STA, CHA, MOT, REP, AGE, WEI, RET, SAL, FEE, FAV, OFF) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        $stmt = $conn->prepare($sql);
-
-        if (!$stmt) {
-            error_log("Error al preparar la consulta: " . $conn->error);
-            $errorCount++;
-            continue;
-        }
-
-        $stmt->bind_param("issiiiiiiiiiiiidddds",
-            $row[0], // ID
-            $row[1], // NAME
-            $row[2], // NAT
-            $row[3], // OA
-            $row[4], // CON
-            $row[5], // TAL
-            $row[6], // EXP
-            $row[7], // AGG
-            $row[8], // TEI
-            $row[9], // STA
-            $row[10], // CHA
-            $row[11], // MOT
-            $row[12], // REP
-            $row[13], // AGE
-            $row[14], // WEI
-            $row[15], // RET
-            $row[16], // SAL
-            $row[17], // FEE
-            $row[18], // FAV
-            $row[19]  // OFF
-        );
-
-        if (!$stmt->execute()) {
-            error_log("Error al insertar fila: " . $stmt->error);
-            $errorCount++;
-            echo "Error al insertar fila: " . $stmt->error . "\n";
-        } else {
-            error_log("Fila insertada correctamente: " . implode(", ", $row));
-            $successCount++;
-        }
-    }
-
-    error_log("Filas insertadas correctamente: $successCount");
-    error_log("Filas con error: $errorCount");
-
-    echo "Tabla actualizada con éxito. Filas insertadas: $successCount, Filas con error: $errorCount.";
-    error_log("Tabla allAvailablePilots actualizada con éxito.");
-} else {
-    error_log("No se recibió un archivo CSV válido.");
-    echo "No se recibió un archivo CSV válido.";
+// Procesar registros de la clave 'drivers'
+if (!isset($data['drivers']) || !is_array($data['drivers'])) {
+    error_log("El JSON no contiene un array válido de 'drivers'.");
+    die("El JSON no contiene un array válido de 'drivers'.");
 }
 
+$drivers = $data['drivers'];
+$successCount = 0;
+$errorCount = 0;
+
+foreach ($drivers as $row) {
+    // Validar columnas críticas
+    if (empty($row['NAME']) || !isset($row['ID'])) { // NAME no puede ser NULL o vacío, ID debe existir
+        error_log("Registro ignorado: faltan columnas críticas. Datos: " . json_encode($row));
+        $errorCount++;
+        continue;
+    }
+
+    // Mapear columnas a las de la tabla
+    $sql = "INSERT INTO allAvailablePilots (ID, NAME, NAT, OA, CON, TAL, EXP, AGG, TEI, STA, CHA, MOT, REP, AGE, WEI, RET, SAL, FEE, FAV, OFF) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    $stmt = $conn->prepare($sql);
+
+    if (!$stmt) {
+        error_log("Error al preparar la consulta: " . $conn->error);
+        $errorCount++;
+        continue;
+    }
+
+    // Crear variables separadas para bind_param
+    $id = $row['ID'] ?? null;
+    $name = $row['NAME'] ?? null;
+    $nat = $row['NAT'] ?? null;
+    $oa = $row['OA'] ?? null;
+    $con = $row['CON'] ?? null;
+    $tal = $row['TAL'] ?? null;
+    $exp = $row['EXP'] ?? null;
+    $agg = $row['AGG'] ?? null;
+    $tei = $row['TEI'] ?? null;
+    $sta = $row['STA'] ?? null;
+    $cha = $row['CHA'] ?? null;
+    $mot = $row['MOT'] ?? null;
+    $rep = $row['REP'] ?? null;
+    $age = $row['AGE'] ?? null;
+    $wei = $row['WEI'] ?? null;
+    $ret = $row['RET'] ?? null;
+    $sal = $row['SAL'] ?? null;
+    $fee = $row['FEE'] ?? null;
+    $fav = $row['FAV'] ?? null;
+    $off = $row['OFF'] ?? null;
+
+    $stmt->bind_param("issiiiiiiiiiiiidddds",
+        $id,
+        $name,
+        $nat,
+        $oa,
+        $con,
+        $tal,
+        $exp,
+        $agg,
+        $tei,
+        $sta,
+        $cha,
+        $mot,
+        $rep,
+        $age,
+        $wei,
+        $ret,
+        $sal,
+        $fee,
+        $fav,
+        $off
+    );
+
+    if (!$stmt->execute()) {
+        error_log("Error al insertar registro: " . $stmt->error);
+        $errorCount++;
+    } else {
+        error_log("Registro insertado correctamente: " . json_encode($row));
+        $successCount++;
+    }
+}
+
+error_log("Registros insertados correctamente: $successCount");
+error_log("Registros con error: $errorCount");
+
+echo "Tabla actualizada con éxito. Registros insertados: $successCount, Registros con error: $errorCount.";
 $conn->close();
 error_log("Conexión cerrada.");
 ?>
