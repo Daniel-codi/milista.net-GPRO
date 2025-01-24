@@ -1,0 +1,97 @@
+<!--
+Proyecto de WebPage milista.net/GPRO
+Este HTML realiza la siguiente tarea:
+(1) Descarga el archivo .gz 
+(2) Descomprime el archivo .gz
+(3) Envía el archivo CSV al servidor para actualizar la base de datos
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Procesar Archivo</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
+</head>
+<body>
+    <h1>Descargar, Descomprimir y Actualizar Base de Datos</h1>
+    <button id="processFile">Procesar Archivo</button>
+    <pre id="output"></pre>
+
+    <script>
+        document.getElementById("processFile").addEventListener("click", async () => {
+            const outputElement = document.getElementById("output");
+            outputElement.textContent += "\nProcesando archivo...";
+            console.log("Iniciando proceso...");
+
+            try {
+                // Paso 1: Descargar el archivo .gz
+                const url = "https://www.gpro.net/gb/GetMarketFile.asp?market=drivers&type=csv";
+                outputElement.textContent += `\nRealizando solicitud a: ${url}`;
+                console.log(`Realizando solicitud a: ${url}`);
+
+                const response = await fetch(url);
+
+                if (!response.ok) {
+                    const errorMessage = `Error al descargar el archivo: ${response.status} ${response.statusText}`;
+                    outputElement.textContent += `\n${errorMessage}`;
+                    console.error(errorMessage);
+                    throw new Error(errorMessage);
+                }
+
+                outputElement.textContent += "\nArchivo .gz descargado correctamente.";
+                console.log("Archivo .gz descargado correctamente.");
+                const compressedData = new Uint8Array(await response.arrayBuffer());
+
+                // Paso 2: Descomprimir el archivo .gz
+                outputElement.textContent += "\nDescomprimiendo archivo .gz...";
+                console.log("Descomprimiendo archivo .gz...");
+                const decompressedData = pako.inflate(compressedData, { to: 'string' });
+                outputElement.textContent += "\nArchivo descomprimido correctamente.";
+                console.log("Archivo descomprimido correctamente.");
+
+                // Obtener el nombre del archivo del encabezado de la respuesta
+                const contentDisposition = response.headers.get('Content-Disposition');
+                let fileName = 'archivo_descomprimido.csv'; // Nombre predeterminado
+                if (contentDisposition && contentDisposition.includes('filename=')) {
+                    const match = contentDisposition.match(/filename="?([^";]+)"?/);
+                    if (match && match[1]) {
+                        fileName = match[1];
+                    }
+                }
+                outputElement.textContent += `\nNombre del archivo detectado: ${fileName}`;
+                console.log(`Nombre del archivo detectado: ${fileName}`);
+
+                // Paso 3: Subir el CSV al servidor
+                outputElement.textContent += "\nPreparando archivo para subir al servidor...";
+                console.log("Preparando archivo para subir al servidor...");
+                const formData = new FormData();
+                const blob = new Blob([decompressedData], { type: 'text/csv' });
+                formData.append("csv_file", blob, fileName);
+
+                outputElement.textContent += "\nSubiendo archivo al servidor...";
+                console.log("Subiendo archivo al servidor...");
+                const uploadResponse = await fetch("https://milista.net/gpro/php/subir_datos_a_la_database.php", {
+                    method: "POST",
+                    body: formData,
+                });
+
+                if (!uploadResponse.ok) {
+                    const errorMessage = `Error al subir el archivo: ${uploadResponse.status} ${uploadResponse.statusText}`;
+                    outputElement.textContent += `\n${errorMessage}`;
+                    console.error(errorMessage);
+                    throw new Error(errorMessage);
+                }
+
+                const result = await uploadResponse.text();
+                outputElement.textContent += "\nArchivo subido correctamente.";
+                console.log("Archivo subido correctamente.");
+                outputElement.textContent += `\nÉxito: ${result}`;
+            } catch (error) {
+                outputElement.textContent += `\nError: ${error.message}`;
+                console.error("Error detectado durante el proceso:", error);
+            }
+        });
+    </script>
+</body>
+</html>

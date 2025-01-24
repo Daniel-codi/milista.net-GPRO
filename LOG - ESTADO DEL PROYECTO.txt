@@ -1,0 +1,5 @@
+Estado del proyecto:
+He subido los archivos a la web
+He encontrado que el problema radica en el problemático CSV
+
+el próximo intento será cambiar el index.html y el php para que trabajen con json
