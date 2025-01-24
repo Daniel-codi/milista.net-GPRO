@@ -1,0 +1,47 @@
+<!--
+Este HTML realiza la siguiente tarea:
+(1) Descarga el archivo .gz 
+(2) Descomprime el archivo .gz
+(3) Descarga el archivo CSV descomprimido
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Procesar Archivo</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
+</head>
+<body>
+    <h1>Descargar, Descomprimir y Transformar Archivo</h1>
+    <button id="processFile">Procesar Archivo</button>
+    <pre id="output"></pre>
+
+    <script>
+        document.getElementById("processFile").addEventListener("click", async () => {
+            const outputElement = document.getElementById("output");
+            outputElement.textContent = "Procesando archivo...";
+
+            try {
+                // Paso 1: Descargar el archivo .gz
+                const response = await fetch("https://www.gpro.net/gb/GetMarketFile.asp?market=drivers&type=csv");
+                const compressedData = new Uint8Array(await response.arrayBuffer());
+
+                // Paso 2: Descomprimir el archivo .gz
+                const decompressedData = pako.inflate(compressedData, { to: 'string' });
+
+                // Paso 3: Descargar el CSV descomprimido
+                const blob = new Blob([decompressedData], { type: 'text/csv' });
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(blob);
+                link.download = "drivers_market.csv";
+                link.click();
+
+                outputElement.textContent = "Archivo CSV descomprimido y descargado.";
+            } catch (error) {
+                outputElement.textContent = `Error: ${error.message}`;
+            }
+        });
+    </script>
+</body>
+</html>
