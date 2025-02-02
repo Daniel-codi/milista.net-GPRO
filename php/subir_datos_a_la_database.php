@@ -49,22 +49,6 @@ if ($data === null) {
 
 $response["messages"][] = "JSON recibido y decodificado correctamente.";
 
-// Actualizar la tabla Updates con el campo Last updated
-if (isset($data['Last updated'])) {
-    $lastUpdated = $data['Last updated'];
-    $sql_update = "UPDATE Updates SET LastUpdated = ? WHERE TableName = 'allAvailablePilots'";
-    $stmt_update = $conn->prepare($sql_update);
-    if ($stmt_update) {
-        $stmt_update->bind_param("s", $lastUpdated);
-        if ($stmt_update->execute()) {
-            $response["messages"][] = "Campo LastUpdated actualizado correctamente en allAvailablePilots.";
-        } else {
-            $response["messages"][] = "Error al actualizar LastUpdated en allAvailablePilots: " . $stmt_update->error;
-        }
-    } else {
-        $response["messages"][] = "Error al preparar la consulta para actualizar LastUpdated en allAvailablePilots: " . $conn->error;
-    }
-}
 
 // Limpiar la tabla allAvailablePilots
 $sql_truncate = "TRUNCATE TABLE allAvailablePilots";
@@ -119,7 +103,31 @@ foreach ($drivers as $row) {
 $response["messages"][] = "Registros insertados correctamente en allAvailablePilots: $successCount";
 $response["messages"][] = "Registros con error en allAvailablePilots: $errorCount";
 
-// Limpiar y actualizar la tabla availableProdigies
+// Actualizar la tabla Updates con el campo Last updated, para la Tabla allAvailablePilots
+if (isset($data['Last updated'])) {
+    $lastUpdated = $data['Last updated'];
+    $sql_update = "UPDATE Updates SET LastUpdated = ? WHERE TableName = 'allAvailablePilots'";
+    $stmt_update = $conn->prepare($sql_update);
+    if ($stmt_update) {
+        $stmt_update->bind_param("s", $lastUpdated);
+        if ($stmt_update->execute()) {
+            $response["messages"][] = "Campo LastUpdated actualizado correctamente en allAvailablePilots.";
+        } else {
+            $response["messages"][] = "Error al actualizar LastUpdated en allAvailablePilots: " . $stmt_update->error;
+        }
+    } else {
+        $response["messages"][] = "Error al preparar la consulta para actualizar LastUpdated en allAvailablePilots: " . $conn->error;
+    }
+}
+
+// Limpiar la tabla availableProdigies antes de actualizarla
+$sql_truncate_prodigies = "TRUNCATE TABLE availableProdigies";
+if (!$conn->query($sql_truncate_prodigies)) {
+    $response["status"] = "error";
+    $response["messages"][] = "Error al vaciar la tabla availableProdigies: " . $conn->error;
+}
+
+// Insertar datos en availableProdigies
 $sql_insert = "INSERT INTO availableProdigies (ID, NAME, NAT, OA, CON, TAL, EXP, AGG, TEI, STA, CHA, MOT, REP, AGE, WEI, RET, SAL, FEE, FAV, OFF, Merits) 
 SELECT ap.ID, ap.NAME, ap.NAT, ap.OA, ap.CON, ap.TAL, ap.EXP, ap.AGG, ap.TEI, ap.STA, ap.CHA, ap.MOT, ap.REP, ap.AGE, ap.WEI, ap.RET, ap.SAL, ap.FEE, ap.FAV, ap.OFF, lp.Merits 
 FROM allAvailablePilots ap 
@@ -130,6 +138,25 @@ if ($conn->query($sql_insert)) {
 } else {
     $response["messages"][] = "Error al actualizar availableProdigies: " . $conn->error;
 }
+
+
+// Actualizar la tabla Updates con el campo Last updated, para la Tabla availableProdigies
+if (isset($data['Last updated'])) {
+    $lastUpdated = $data['Last updated'];
+    $sql_update = "UPDATE Updates SET LastUpdated = ? WHERE TableName = 'availableProdigies'";
+    $stmt_update = $conn->prepare($sql_update);
+    if ($stmt_update) {
+        $stmt_update->bind_param("s", $lastUpdated);
+        if ($stmt_update->execute()) {
+            $response["messages"][] = "Campo LastUpdated actualizado correctamente en availableProdigies.";
+        } else {
+            $response["messages"][] = "Error al actualizar LastUpdated en availableProdigies: " . $stmt_update->error;
+        }
+    } else {
+        $response["messages"][] = "Error al preparar la consulta para actualizar LastUpdated en availableProdigies: " . $conn->error;
+    }
+}
+
 
 // Cerrar conexión
 echo json_encode($response);
