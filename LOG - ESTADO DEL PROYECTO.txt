@@ -1,11 +1,11 @@
 Estado del proyecto:
 Funciona perfectamente el algoritmo de subir todos los registros a allAvailablePilots
 
-creo que el próximo paso es encapsular correctamente el JS
+Funciona perfectamente el algoritmo de actualizar la tabla availableProdigies
 
-actualizar la tabla availableProdigies
+creo que hay un problema que no borra los registros availableProdigies antes de actualizar
 
-colocar correctamente los Updates
+
 
 Finalmente, comenzar a trabajar con la vista principal.
 
