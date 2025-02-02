@@ -1,11 +1,10 @@
-Estado del proyecto:
+Estado del proyecto: 01/02/2025
 Funciona perfectamente el algoritmo de subir todos los registros a allAvailablePilots
 
 Funciona perfectamente el algoritmo de actualizar la tabla availableProdigies
 
-creo que hay un problema que no borra los registros availableProdigies antes de actualizar
 
-
+El código parece sobrepasar la capacidad del canvas de chatgpt. DEBO MODULARIZAR para poder seguir trabajando
 
 Finalmente, comenzar a trabajar con la vista principal.
 
